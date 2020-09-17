@@ -140,21 +140,22 @@ void WifiServ::_cleanWifi(){
     ws.closeAll();
     Serial.println("Server stop...");
     //server.reset();
-    server.end();
+    //server.end();
     Serial.println("STOPPIN DNS...");
-    _dNSServer.stop();
+    //_dNSServer.stop();
 
     if(estadoOriginal == WifiServEstadoConexion::CONECTADO_AP){
         Serial.println("disconecting AP...");
-        WiFi.softAPdisconnect(true);
+        //WiFi.softAPdisconnect(true);
         
         delay(1000);
     } else if (estadoOriginal == WifiServEstadoConexion::CONECTADO){
         Serial.println("Disconecting WiFi...");
-        WiFi.disconnect(true);
+        //WiFi.disconnect(true);
         delay(1000);
     }
 
+    
 }
 
 void WifiServ::_setup(){
@@ -170,14 +171,15 @@ void WifiServ::_setup(){
     SPIFFSReadHandler::listDir("/");
     
     server.addHandler(new RedirectInvalidHostHandler(this));
-    server.addHandler(new RedirectIndexHandler());
-    server.addHandler(new SPIFFSReadHandler());
+    
     server.on(
         "/generate_204",
         HTTP_GET,
         [](AsyncWebServerRequest * request){
             request->send(FSInclude, "/indexAP.html", "text/html");
         });  
+    server.addHandler(new RedirectIndexHandler());
+    server.addHandler(new SPIFFSReadHandler());
     
     ws.onEvent([&](AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len) {
         onEvent(server,client,type,arg,data,len);
