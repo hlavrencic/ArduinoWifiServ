@@ -10,7 +10,7 @@ void setup(){
 
     wifiServ.connectAP("My Access Point");
 
-    wifiServ.textReceivedHandler = [&](StaticJsonDocument<200> doc){
+    wifiServ.textReceivedHandler = [&](JsonVariant doc){
         const char* pin2 = doc["pin2"];
 
         Serial.println(pin2);

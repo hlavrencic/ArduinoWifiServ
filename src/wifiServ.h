@@ -14,7 +14,7 @@
         #include <ESPAsyncTCP.h>
     #endif
 
-    typedef std::function<void(StaticJsonDocument<200> doc)> TextReceivedHandler;
+    typedef std::function<void(JsonVariant doc)> TextReceivedHandler;
     typedef std::function<void()> SocketStatusHandler;
 
     enum WifiServEstadoConexion {NINGUNO = 0, CONFIGURADO = 1, CONECTADO = 2, CONECTADO_AP = 3};
@@ -25,7 +25,8 @@
         void connect(const char* ssid, const char* pass = (const char*)__null);
         void connectAP(const char* ssid);
         void loop();
-        void sendJson(StaticJsonDocument<200> doc);
+        JsonVariant initJson();
+        void sendJson(JsonVariant doc);
         IPAddress GetIP();
         AsyncWebServer server = AsyncWebServer(80);
         AsyncWebSocket ws = AsyncWebSocket("/ws");

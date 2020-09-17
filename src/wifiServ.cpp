@@ -4,7 +4,12 @@
 #include <SPIFFSReadHandler.h>
 #include <FSInclude.h>
 
-void WifiServ::sendJson(StaticJsonDocument<200> doc){
+JsonVariant WifiServ::initJson(){
+    StaticJsonDocument<200> doc;
+    return doc.as<JsonVariant>();
+}
+
+void WifiServ::sendJson(JsonVariant doc){
     char txt[200];
     serializeJson(doc, txt);
     ws.textAll(txt);
@@ -23,7 +28,9 @@ void WifiServ::serilize(char* data){
         return;
     } 
     
-    textReceivedHandler(doc);
+    auto jsonDoc = doc.as<JsonVariant>();
+
+    textReceivedHandler(jsonDoc);
 };
 
 void WifiServ::onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len) {
