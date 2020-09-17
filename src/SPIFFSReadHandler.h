@@ -43,16 +43,20 @@
 
             // Verifica que el archivo exista
             auto url = request->url().c_str();
-            auto file = SPIFFS.open(url, "r");
-            auto existe = file.available();
-            file.close();
+
+            auto existe = FSInclude.exists(url);
+            if(!existe){
+                Serial.print("NO EXISTE: ");
+                Serial.println(url);
+            }
+
             return existe;
         }
 
         void handleRequest(AsyncWebServerRequest *request) {
             auto urlStr = request->url();
             auto contentType = _getType(urlStr);
-            request->send(SPIFFS, urlStr, contentType);
+            request->send(FSInclude, urlStr, contentType);
         }
     private:
         bool _hasExt(String path, const char* ext){

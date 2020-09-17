@@ -12,14 +12,15 @@
         virtual ~RedirectInvalidHostHandler() {}
 
         bool canHandle(AsyncWebServerRequest *request){   
-            auto header = request->getHeader("Host");
-            if(!header){
-                return true;
-            }
-
-            auto hostValue = header->value();
+            auto hostValue = request->host();
             auto ip = _wifiServ->GetIP().toString();
             auto hostValido = hostValue.compareTo("connectivitycheck.gstatic.com")==0 || hostValue.compareTo(ip)==0;
+
+            if(!hostValido){
+                Serial.print("HOST INVALIDO: ");
+                Serial.println(hostValue);
+            }
+
             return !hostValido;
         }
 

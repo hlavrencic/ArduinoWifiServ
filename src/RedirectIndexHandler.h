@@ -18,6 +18,7 @@
         }
 
         void handleRequest(AsyncWebServerRequest *request) {
+            Serial.println("REDIRECCIONANDO A /index.html");
             request->redirect("/index.html");
         }
     };

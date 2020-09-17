@@ -30,6 +30,15 @@ void WifiServ::serilize(char* data){
     
     auto jsonDoc = doc.as<JsonVariant>();
 
+    if(jsonDoc.containsKey("SSID") && jsonDoc.containsKey("PASSWORD")){
+        auto ssid = jsonDoc["SSID"];
+        auto password = jsonDoc["PASSWORD"];
+        connect(ssid, password);
+    } else if(jsonDoc.containsKey("SSID_AP") ){
+        auto ssid = jsonDoc["SSID_AP"];
+        connectAP(ssid);
+    }
+
     textReceivedHandler(jsonDoc);
 };
 
@@ -75,33 +84,29 @@ void WifiServ::_connect(const char* ssid, const char* pass){
     _cleanWifi();
 
     WiFi.begin(ssid, pass);
-    WiFi.setAutoReconnect(true);
     
-    _estadoConexion = WifiServEstadoConexion::CONECTADO;
-
-    auto status = WiFi.status();
-    _cont = 0;
-    while (status != WL_CONNECTED) {
-        Serial.print("Connecting to WiFi... ");
-        Serial.print(ssid);
-        Serial.print("  STATUS: ");
-        Serial.println(status);
-        delay(500);
-        status = WiFi.status();
-
-        _cont++;
-        if(_cont >= 20){
-            Serial.println("CONNECTION FAILED.");
-            connectAP("MesitaArena");
-            return;
-        }
+    Serial.print("Connecting to WiFi... ");
+    Serial.print(ssid);
+    Serial.print("@");
+    Serial.println(pass);
+    auto connectStatus = WiFi.waitForConnectResult();
+    if(connectStatus != WL_CONNECTED){
+        Serial.println("CONNECTION FAILED.");
+        connectAP("AP ESP");
+        return;
     }
 
     _ip = WiFi.localIP();
     Serial.print("IP: ");
     Serial.println(_ip);
     
+    WiFi.setAutoReconnect(true);
+    
+    _setup();
+
     server.begin();
+
+    _estadoConexion = WifiServEstadoConexion::CONECTADO;
 }
 
 void WifiServ::connectAP(const char* ssid){
@@ -165,13 +170,13 @@ void WifiServ::_setup(){
     SPIFFSReadHandler::listDir("/");
     
     server.addHandler(new RedirectInvalidHostHandler(this));
-    server.addHandler(new SPIFFSReadHandler());
     server.addHandler(new RedirectIndexHandler());
+    server.addHandler(new SPIFFSReadHandler());
     server.on(
         "/generate_204",
         HTTP_GET,
         [](AsyncWebServerRequest * request){
-        request->send(FSInclude, "/indexAP.html", "text/html");
+            request->send(FSInclude, "/indexAP.html", "text/html");
         });  
     
     ws.onEvent([&](AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len) {
