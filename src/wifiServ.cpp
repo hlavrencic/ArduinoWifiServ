@@ -9,10 +9,11 @@ JsonVariant WifiServ::initJson(){
     return doc.as<JsonVariant>();
 }
 
-void WifiServ::sendJson(JsonVariant doc){
-    char txt[200];
+String WifiServ::sendJson(JsonVariant doc){
+    String txt;
     serializeJson(doc, txt);
     ws.textAll(txt);
+    return txt;
 };
 
 void WifiServ::serilize(char* data){
@@ -37,7 +38,11 @@ void WifiServ::serilize(char* data){
     } else if(jsonDoc.containsKey("SSID_AP") ){
         auto ssid = jsonDoc["SSID_AP"];
         connectAP(ssid);
+    } else if(jsonDoc.containsKey("SCAN_WIFI") ){
+        _scan = true;
     }
+
+
 
     textReceivedHandler(jsonDoc);
 };
@@ -158,6 +163,16 @@ void WifiServ::_cleanWifi(){
     
 }
 
+void WifiServ::handleGet(const char* uri, const char* func1()){
+    server.on(
+        uri,
+        HTTP_GET,
+        [&](AsyncWebServerRequest * request){
+            auto txt = func1();
+            request->send(200, "text/plain", txt);
+        });
+}
+
 void WifiServ::_setup(){
     if(_estadoConexion != WifiServEstadoConexion::NINGUNO){
         return;
@@ -170,8 +185,12 @@ void WifiServ::_setup(){
 
     SPIFFSReadHandler::listDir("/");
     
+    ws.onEvent([&](AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len) {
+        onEvent(server,client,type,arg,data,len);
+    });
+
     server.addHandler(new RedirectInvalidHostHandler(this));
-    
+    server.addHandler(&ws);
     server.on(
         "/generate_204",
         HTTP_GET,
@@ -180,13 +199,7 @@ void WifiServ::_setup(){
         });  
     server.addHandler(new RedirectIndexHandler());
     server.addHandler(new SPIFFSReadHandler());
-    
-    ws.onEvent([&](AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len) {
-        onEvent(server,client,type,arg,data,len);
-    });
 
-    server.addHandler(&ws);
-            
     _estadoConexion = WifiServEstadoConexion::CONFIGURADO;
 };
 
@@ -194,6 +207,40 @@ void WifiServ::loop(){
     if(_ssid.length() > 0){
         _connect(_ssid.c_str(), _pass.c_str());
         _ssid.clear();
+    }
+
+    if(_scan){
+        _scan = false;
+
+        Serial.println("** Scan Networks **");
+        int numSsid = -1;
+
+        Serial.print("Networks: ");
+        WiFi.scanNetworks(true);
+
+        while(numSsid == -1 ){
+            numSsid = WiFi.scanComplete();
+            delay(100);
+        }
+        
+        Serial.println(numSsid);
+
+        StaticJsonDocument<300> doc;
+        for(auto i = 0; i < numSsid; i++){
+            String ssid;
+            byte enc;
+            int rss;
+            byte* bssid;
+            int channel;
+            bool hidden;
+            WiFi.getNetworkInfo(i, ssid, enc, rss, bssid, channel, hidden);
+
+            doc["scan"][i]["ssid"] = ssid;
+        }
+        
+        auto jsonTxt = sendJson(doc.as<JsonVariant>());
+        Serial.println(jsonTxt); 
+        WiFi.scanDelete();       
     }
 
     if(_estadoConexion != WifiServEstadoConexion::CONECTADO_AP) return;

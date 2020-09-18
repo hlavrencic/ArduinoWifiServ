@@ -1,10 +1,12 @@
 let SOCKET_URL = "ws://" + window.location.host + "/ws";
 
-try{
-    let wifiServ = new WifiServ();
-    let viewModel = new Binder(wifiServ, ko).bind();
-    ko.applyBindings(viewModel);
-    wifiServ.initWebSocket(SOCKET_URL);
-}catch(e){
-    alert(e);
-}
+
+var wifiServ = new WifiServ();
+var viewModel = new Binder(wifiServ, ko).bind();
+var applyBindings = new Promise(resolve => {
+    resolve(viewModel);
+});
+setTimeout(() => {
+    applyBindings.then(() => ko.applyBindings(viewModel));
+}, 100);
+wifiServ.initWebSocket(SOCKET_URL);

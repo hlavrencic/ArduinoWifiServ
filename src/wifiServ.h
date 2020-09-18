@@ -26,13 +26,15 @@
         void connectAP(const char* ssid);
         void loop();
         JsonVariant initJson();
-        void sendJson(JsonVariant doc);
+        String sendJson(JsonVariant doc);
         IPAddress GetIP();
         AsyncWebServer server = AsyncWebServer(80);
         AsyncWebSocket ws = AsyncWebSocket("/ws");
+        void handleGet(const char* uri, const char* func1());
         TextReceivedHandler textReceivedHandler;
         SocketStatusHandler connectedHandler;
         SocketStatusHandler disconnectedHandler;
+        
     private:
         void _connect(const char* ssid, const char* pass = (const char*)__null);
         void _setup();
@@ -45,6 +47,7 @@
         String _pass;
         IPAddress _ip;
         unsigned short _cont;
+        bool _scan = false;
     };
 
 #endif
