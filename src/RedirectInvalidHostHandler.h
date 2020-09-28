@@ -13,8 +13,10 @@
 
         bool canHandle(AsyncWebServerRequest *request){   
             auto hostValue = request->host();
-            auto ip = _wifiServ->GetIP().toString();
-            auto hostValido = hostValue.compareTo("connectivitycheck.gstatic.com")==0 || hostValue.compareTo(ip)==0;
+            //auto ip = _wifiServ->GetIP().toString();
+            //auto hostValido = hostValue.compareTo("connectivitycheck.gstatic.com")==0 || hostValue.compareTo(ip)==0;
+
+            auto hostValido = true;
 
             if(!hostValido){
                 Serial.print("HOST INVALIDO: ");

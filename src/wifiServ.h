@@ -17,37 +17,32 @@
     typedef std::function<void(JsonVariant doc)> TextReceivedHandler;
     typedef std::function<void()> SocketStatusHandler;
 
-    enum WifiServEstadoConexion {NINGUNO = 0, CONFIGURADO = 1, CONECTADO = 2, CONECTADO_AP = 3};
+    enum WifiServEstadoConexion {NINGUNO = 0, CONFIGURADO = 1, CONECTADO_AP = 2, CONECTANDO = 3, CONECTADO = 4 };
 
     class WifiServ
     {
     public:
-        void connect(const char* ssid, const char* pass = (const char*)__null);
-        void connectAP(const char* ssid);
+        IPAddress init(const char* ssid = "ESP Acces Point");
+        IPAddress connect(const char* ssid, const char* pass = (const char*)__null);
         void loop();
         JsonVariant initJson();
         String sendJson(JsonVariant doc);
-        IPAddress GetIP();
         AsyncWebServer server = AsyncWebServer(80);
         AsyncWebSocket ws = AsyncWebSocket("/ws");
         void handleGet(const char* uri, const char* func1());
+
         TextReceivedHandler textReceivedHandler;
         SocketStatusHandler connectedHandler;
         SocketStatusHandler disconnectedHandler;
         
     private:
-        void _connect(const char* ssid, const char* pass = (const char*)__null);
-        void _setup();
-        void _cleanWifi();
-        void serilize(char* data);
-        void onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
+        void serilize(const char* data);
+        void _onEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
+
         DNSServer _dNSServer;
         WifiServEstadoConexion _estadoConexion = WifiServEstadoConexion::NINGUNO;
-        String _ssid;
-        String _pass;
-        IPAddress _ip;
-        unsigned short _cont;
         bool _scan = false;
+        String _dataReceived;
     };
 
 #endif

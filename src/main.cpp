@@ -5,12 +5,13 @@ WifiServ wifiServ;
 
 void setup(){
     Serial.begin(230400);
+
     
     delay(1000);
 
     pinMode(LED_PIN, OUTPUT); // LED PIN;
 
-    //wifiServ.connectAP("My Access Point");
+    wifiServ.init("My Access Point");
     wifiServ.connect("MARCO_POLO", "marcopolo12");
 
     wifiServ.textReceivedHandler = [&](JsonVariant doc){
