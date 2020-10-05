@@ -1,10 +1,10 @@
+
+https://hlavrencic.github.io/ArduinoWifiServ/ 
+
 # ArduinoWifiServ
 
 Access and control your ESP from any mobile
 The library configures and Acces Point that redirects your mobile automatically to a WebSite hosted inside the ESP. After the conection is stablished, the comunication between your mobile and ESP is bidireccional. That allows ESP or Mobile to send data anytime.
-
-## Enough for me! Lets try
-github.com/hlavrencic/ArduinoWifiServ
 
 ## How connection works
 The library configures an Access Point with a DNS host that redirects any WiFi client to ESP WebSite home page.
