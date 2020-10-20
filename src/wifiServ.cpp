@@ -4,7 +4,7 @@
 #include <SPIFFSReadHandler.h>
 #include <FSInclude.h>
 
-JsonVariant getScan(){
+StaticJsonDocument<200> getScan(){
     int numSsid = -1;
 
     Serial.print("Networks: ");
@@ -17,7 +17,8 @@ JsonVariant getScan(){
     
     Serial.println(numSsid);
 
-    StaticJsonDocument<300> doc;
+    Serial.println("Generando Json...");
+    StaticJsonDocument<200> doc;
     for(auto i = 0; i < numSsid; i++){
         String ssid;
         byte enc;
@@ -30,8 +31,9 @@ JsonVariant getScan(){
         doc["scan"][i]["ssid"] = ssid;
     }
     
+    Serial.println("Eliminando scan...");
     WiFi.scanDelete();
-    return doc.as<JsonVariant>();
+    return doc;
 }
 
 JsonVariant WifiServ::initJson(){
@@ -39,9 +41,10 @@ JsonVariant WifiServ::initJson(){
     return doc.as<JsonVariant>();
 }
 
-String WifiServ::sendJson(JsonVariant doc){
+String WifiServ::sendJson(StaticJsonDocument<200> doc){
     String txt;
     serializeJson(doc, txt);
+    Serial.println(txt);
     ws.textAll(txt);
     return txt;
 };
@@ -151,8 +154,8 @@ IPAddress WifiServ::init(const char* ssid){
         "/generate_204",
         HTTP_GET,
         [](AsyncWebServerRequest * request){
-            request->send(FSInclude, "/indexAP.html", "text/html");
-        });  
+            request->send(FSInclude, "/index.html", "text/html");
+        });          
     server.addHandler(new RedirectIndexHandler());
     server.addHandler(new SPIFFSReadHandler());
 
@@ -192,6 +195,7 @@ void WifiServ::loop(){
         Serial.println("** Scan Networks **");
         auto scanJson = getScan();
         
+        Serial.println("Enviando Json...");
         auto jsonTxt = sendJson(scanJson);
         Serial.println(jsonTxt); 
     }

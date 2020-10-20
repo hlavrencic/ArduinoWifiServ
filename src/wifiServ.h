@@ -26,7 +26,7 @@
         IPAddress connect(const char* ssid, const char* pass = (const char*)__null);
         void loop();
         JsonVariant initJson();
-        String sendJson(JsonVariant doc);
+        String sendJson(StaticJsonDocument<200> doc);
         AsyncWebServer server = AsyncWebServer(80);
         AsyncWebSocket ws = AsyncWebSocket("/ws");
         void handleGet(const char* uri, const char* func1());

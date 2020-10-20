@@ -12,7 +12,7 @@ void setup(){
     pinMode(LED_PIN, OUTPUT); // LED PIN;
 
     wifiServ.init("My Access Point");
-    wifiServ.connect("MARCO_POLO", "marcopolo12");
+    //wifiServ.connect("MARCO_POLO", "marcopolo12");
 
     wifiServ.textReceivedHandler = [&](JsonVariant doc){
         if(doc.containsKey("pin2")){
