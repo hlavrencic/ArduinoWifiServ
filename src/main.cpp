@@ -12,7 +12,9 @@ void setup(){
     pinMode(LED_PIN, OUTPUT); // LED PIN;
 
     wifiServ.init("My Access Point");
-    //wifiServ.connect("MARCO_POLO", "marcopolo12");
+    auto ip = wifiServ.connect("HUAWEI-165B", "marcopolo12");
+    
+    Serial.println(ip);
 
     wifiServ.textReceivedHandler = [&](JsonVariant doc){
         if(doc.containsKey("pin2")){
