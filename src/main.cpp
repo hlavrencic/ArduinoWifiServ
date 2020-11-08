@@ -1,21 +1,21 @@
-#include <WifiServ.h>
+#include <EspWifiServer.h>
+
+EspWifiServer espWifiServer;
 
 const uint8_t LED_PIN = 2;
-WifiServ wifiServ;
 
 void setup(){
     Serial.begin(230400);
 
-    
     delay(1000);
 
     pinMode(LED_PIN, OUTPUT); // LED PIN;
 
-    wifiServ.init("My Access Point");
-    auto ip = wifiServ.connect("HUAWEI-165B", "marcopolo12");
+    espWifiServer.init("My AP");
     
-    Serial.println(ip);
-
+    auto ip = espWifiServer.connect("MARCO_POLO", "marcopolo12");
+    
+    /*
     wifiServ.textReceivedHandler = [&](JsonVariant doc){
         if(doc.containsKey("pin2")){
             const char* pin2 = doc["pin2"];
@@ -31,8 +31,9 @@ void setup(){
         }
         
     };
+    */
 }
 
 void loop(){
-    wifiServ.loop();
+    espWifiServer.next();
 }
