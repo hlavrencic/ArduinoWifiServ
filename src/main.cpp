@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <EspWifiServer.h>
 
 EspWifiServer espWifiServer;
@@ -10,6 +11,15 @@ void setup(){
     delay(1000);
 
     pinMode(LED_PIN, OUTPUT); // LED PIN;
+
+    espWifiServer.handler = [&](String uri, JsonObject& json){
+        if(json.containsKey("SCAN_WIFI")){
+            espWifiServer.send([&](JsonObject &json){
+                json["scan"]["ssid"] = "NET1";
+                json["scan"]["ssid"] = "NET1";
+            });
+        }
+    }; 
 
     espWifiServer.init("My AP");
     

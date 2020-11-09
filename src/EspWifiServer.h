@@ -1,10 +1,13 @@
 #include <StaticWebServer.h>
 #include <WifiConnection.h>
 #include <WebSocketsServer.h>
+#include <ArduinoJson.h> //https://github.com/bblanchon/ArduinoJson
 
 StaticWebServer staticWebServer;
 WifiConnection wifiConnection;
 WebSocketsServer webSocket = WebSocketsServer(81);
+
+typedef std::function<void(String uri, JsonObject& doc)> TextReceivedHandler;
 
 class EspWifiServer {
     public:
@@ -27,7 +30,18 @@ class EspWifiServer {
                     }
                     break;
                 case WStype_TEXT:
+                    {
                         Serial.printf("[%u] get Text: %s\r\n", num, payload);
+                        String data = String((char *)payload);
+                        DynamicJsonBuffer jsonBuffer;
+                        JsonObject& json = jsonBuffer.parseObject(data);
+
+                        if(!handler){
+                            return;
+                        }
+
+                        handler(data, json);
+                    }
                     break;
            
                 default:
@@ -35,15 +49,35 @@ class EspWifiServer {
                     break;
                 }
             });
+
+            return true;
         }
 
         String connect(const char* ssid, const char* pass){
             return wifiConnection.connect(ssid, pass);
         }
 
+        void send(std::function<void(JsonObject& doc)> func){
+            auto jsonTxt = createJsonTxt(func);
+            webSocket.broadcastTXT(jsonTxt);
+        }
+
         void next(){
             wifiConnection.next();
             staticWebServer.handleClient();
             webSocket.loop();
+        }
+
+        TextReceivedHandler handler;
+    
+    private:
+        
+        String createJsonTxt(std::function<void(JsonObject& doc)> func){
+            DynamicJsonBuffer jsonBuffer;
+            JsonObject& json = jsonBuffer.createObject();
+            func(json);
+            String jsonTxt;
+            json.printTo(jsonTxt);
+            return jsonTxt;
         }
 };
