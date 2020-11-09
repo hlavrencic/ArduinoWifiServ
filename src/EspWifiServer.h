@@ -7,7 +7,7 @@ StaticWebServer staticWebServer;
 WifiConnection wifiConnection;
 WebSocketsServer webSocket = WebSocketsServer(81);
 
-typedef std::function<void(String uri, JsonObject& doc)> TextReceivedHandler;
+typedef std::function<void(String uri, DynamicJsonDocument& doc)> TextReceivedHandler;
 
 class EspWifiServer {
     public:
@@ -33,14 +33,15 @@ class EspWifiServer {
                     {
                         Serial.printf("[%u] get Text: %s\r\n", num, payload);
                         String data = String((char *)payload);
-                        DynamicJsonBuffer jsonBuffer;
-                        JsonObject& json = jsonBuffer.parseObject(data);
+                        DynamicJsonDocument doc(1024);
 
+                        deserializeJson(doc, Serial);
                         if(!handler){
                             return;
                         }
 
-                        handler(data, json);
+                        deserializeJson(doc, data);
+                        handler(data, doc);
                     }
                     break;
            
@@ -57,7 +58,7 @@ class EspWifiServer {
             return wifiConnection.connect(ssid, pass);
         }
 
-        void send(std::function<void(JsonObject& doc)> func){
+        void send(std::function<void(DynamicJsonDocument& doc)> func){
             auto jsonTxt = createJsonTxt(func);
             webSocket.broadcastTXT(jsonTxt);
         }
@@ -72,12 +73,43 @@ class EspWifiServer {
     
     private:
         
-        String createJsonTxt(std::function<void(JsonObject& doc)> func){
-            DynamicJsonBuffer jsonBuffer;
-            JsonObject& json = jsonBuffer.createObject();
-            func(json);
+        String createJsonTxt(std::function<void(DynamicJsonDocument& doc)> func){
+            DynamicJsonDocument doc(1024);
+            func(doc);
+            serializeJson(doc, Serial);
             String jsonTxt;
-            json.printTo(jsonTxt);
+            serializeJson(doc, jsonTxt);
             return jsonTxt;
         }
 };
+
+void getScan(DynamicJsonDocument& doc){
+   
+    int numSsid = -1;
+
+    Serial.print("Networks: ");
+    WiFi.scanNetworks(true);
+
+    while(numSsid == -1 ){
+        numSsid = WiFi.scanComplete();
+        delay(100);
+    }
+    
+    Serial.println(numSsid);
+
+    Serial.println("Generando Json...");
+    for(auto i = 0; i < numSsid; i++){
+        String ssid;
+        byte enc;
+        int rss;
+        byte* bssid;
+        int channel;
+        bool hidden;
+        WiFi.getNetworkInfo(i, ssid, enc, rss, bssid, channel, hidden);
+
+        doc["scan"][i]["ssid"] = ssid;
+    }
+
+    Serial.println("Eliminando scan...");
+    WiFi.scanDelete();
+}

@@ -12,18 +12,17 @@ void setup(){
 
     pinMode(LED_PIN, OUTPUT); // LED PIN;
 
-    espWifiServer.handler = [&](String uri, JsonObject& json){
+    espWifiServer.handler = [&](String uri, DynamicJsonDocument& json){
         if(json.containsKey("SCAN_WIFI")){
-            espWifiServer.send([&](JsonObject &json){
-                json["scan"]["ssid"] = "NET1";
-                json["scan"]["ssid"] = "NET1";
-            });
+            espWifiServer.send([&](DynamicJsonDocument& doc){
+                getScan(doc);
+            });            
         }
     }; 
 
     espWifiServer.init("My AP");
     
-    auto ip = espWifiServer.connect("MARCO_POLO", "marcopolo12");
+    auto ip = espWifiServer.connect("HUAWEI-165B", "marcopolo12");
     
     /*
     wifiServ.textReceivedHandler = [&](JsonVariant doc){
@@ -42,6 +41,7 @@ void setup(){
         
     };
     */
+
 }
 
 void loop(){
