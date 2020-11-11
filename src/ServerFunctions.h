@@ -19,12 +19,19 @@ class ServerFunctions {
                 postScanAsync();
             });
 
-            server.on("/connect", HTTP_POST, [&](){
-                Serial.println("CONNECTING");
-                wifiConnection->connect("HUAWEI-165B", "marcopolo12", [&](String ip){
-                    staticWebServer->send([&](DynamicJsonDocument &doc){
-                        doc["ip"] = ip;
-                    });
+            server.on("/connect", HTTP_POST, [&](){                
+                auto ssid = server.arg("ssid");
+                auto password = server.arg("password");
+                
+                wifiConnection->connect(ssid, password, [&](String ip){
+                    if(ip.compareTo("") != 0) {
+                        staticWebServer->send([&](DynamicJsonDocument &doc){
+                            doc["ip"] = ip;
+                        });
+                    } else {
+                        Serial.println("Sent 408 !");
+                        server.send(408, "application/json", "");
+                    }
                 });
             });
 

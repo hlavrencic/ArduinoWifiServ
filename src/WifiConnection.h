@@ -23,7 +23,7 @@ public:
 
     String init(const String ssid){
         onSoftAPModeStationConnected = WiFi.onSoftAPModeStationConnected([](const WiFiEventSoftAPModeStationConnected &evt){
-            //Serial.print("onSoftAPModeStationConnected");
+            Serial.print("onSoftAPModeStationConnected"); Serial.println(evt.aid);
         });
 
         onSoftAPModeStationDisconnected = WiFi.onSoftAPModeStationDisconnected([](const WiFiEventSoftAPModeStationDisconnected &evt){
@@ -32,12 +32,12 @@ public:
 
         onStationModeGotIP = onStationModeGotIP = WiFi.onStationModeGotIP([&](const WiFiEventStationModeGotIP &evt){
             connectionStatus = ConnectionStatus::GOTIP;
-            //Serial.print("onStationModeGotIP");
+            Serial.println("onStationModeGotIP");
         });
 
         onStationModeConnected = WiFi.onStationModeConnected([&](const WiFiEventStationModeConnected &event){
             connectionStatus = ConnectionStatus::CONNECTED;
-            //Serial.print("onStationModeConnected");
+            Serial.println("onStationModeConnected");
         });
 
         onStationModeDisconnected = WiFi.onStationModeDisconnected([&](const WiFiEventStationModeDisconnected &event){
@@ -60,23 +60,31 @@ public:
         return IpAddress2String(ip);
     };
 
-    void connect(const char* ssid, const char* pass, ConnectionHandler callback){
-        WiFi.disconnect();
+    void connect(String ssid, String pass, ConnectionHandler callback){
         connectionStatus = ConnectionStatus::CONNECTING;
         connectionHandler = callback;
+
+        lastRequestTimeout = millis();
+        
+        Serial.printf("Connecting: %s@%s", ssid.c_str(), pass.c_str());
         WiFi.begin(ssid, pass);
     }
 
     void next(){
         _dNSServer.processNextRequest();
 
-        if(connectionStatus == ConnectionStatus::GOTIP){
+        if(connectionStatus == ConnectionStatus::GOTIP ){
             connectionStatus = ConnectionStatus::NONE;
             auto ip = WiFi.localIP();
             auto iStr = IpAddress2String(ip);
             connectionHandler(iStr);
         }
-        
+        else if (connectionStatus != ConnectionStatus::NONE && millis() - lastRequestTimeout >= 100000)
+        {
+            WiFi.disconnect();
+            connectionStatus = ConnectionStatus::NONE;
+            connectionHandler("");
+        }
     };
 
 private:
@@ -90,4 +98,6 @@ private:
 
     ConnectionStatus connectionStatus = ConnectionStatus::NONE;
     ConnectionHandler connectionHandler;
+
+    unsigned long lastRequestTimeout;
 };

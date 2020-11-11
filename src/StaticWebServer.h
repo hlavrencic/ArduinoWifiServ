@@ -26,8 +26,6 @@
                     Serial.println("Redirect /");
                 });
 
-                auto ipStr = ip.c_str();
-
                 server.onNotFound([&](){
                     Serial.print("Not Found: ");
                     Serial.print(server.uri());

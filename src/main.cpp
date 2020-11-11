@@ -18,10 +18,7 @@ void setup(){
     pinMode(LED_PIN, OUTPUT); // LED PIN;
    
     espWifiServer.init("My Access Point");
-    wifiConnection.connect("HUAWEI-165B", "marcopolo12",[](String ip){
-        Serial.println(ip);
-    });
-
+    
     webSocketServerJson.begin();
     serverFunctions.load();
   
@@ -44,7 +41,7 @@ void loop(){
         maxTime = time;
     }
 
-    if(maxTime > 1000 && m - lastPrint > 1000000){
+    if(maxTime > 10000 && m - lastPrint > 1000000){
         lastPrint = m;
         Serial.printf(" %lu ", maxTime);
         maxTime = 0;
