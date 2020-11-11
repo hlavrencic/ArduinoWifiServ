@@ -38,8 +38,9 @@ class StaticWebServer{
 
                 String indexPath;
                 indexPath.concat("http://");
-                indexPath.concat(ipStr);
+                indexPath.concat("192.168.4.1");
                 indexPath.concat("/index.html");
+                Serial.println(indexPath);
                 server.sendHeader("Location", indexPath);
                 server.send(303);
             });

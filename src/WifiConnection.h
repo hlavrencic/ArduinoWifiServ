@@ -16,10 +16,19 @@ public:
             return "";
         }
 
+        WiFi.onStationModeConnected([](const WiFiEventStationModeConnected &event){
+            Serial.print("CONNECTED");
+        });
+
+        WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected &event){
+            Serial.print("DISCONNECTED");
+        });
+
         return IpAddress2String(ip);
     };
 
     String connect(const char* ssid, const char* pass){
+
         WiFi.begin(ssid, pass);
         Serial.println();
         Serial.print("Connecting to WiFi... ");
@@ -43,7 +52,7 @@ public:
         Serial.println(ip);
         
         WiFi.setAutoReconnect(true);
-
+        
         return IpAddress2String(ip);
     }
 
