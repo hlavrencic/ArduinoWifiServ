@@ -4,7 +4,7 @@
 
 EspWifiServer espWifiServer;
 WebSocketServerJson webSocketServerJson;
-ServerFunctions serverFunctions(&webSocketServerJson);
+ServerFunctions serverFunctions(&webSocketServerJson, &staticWebServer, &wifiConnection);
 
 const uint8_t LED_PIN = 2;
 
@@ -12,13 +12,15 @@ const uint8_t LED_PIN = 2;
 
 void setup(){
     Serial.begin(230400);
-
+    
     delay(1000);
 
     pinMode(LED_PIN, OUTPUT); // LED PIN;
    
     espWifiServer.init("My Access Point");
-    espWifiServer.connect("MARCO_POLO", "marcopolo12");
+    wifiConnection.connect("HUAWEI-165B", "marcopolo12",[](String ip){
+        Serial.println(ip);
+    });
 
     webSocketServerJson.begin();
     serverFunctions.load();
@@ -42,7 +44,7 @@ void loop(){
         maxTime = time;
     }
 
-    if(m - lastPrint > 1000000){
+    if(maxTime > 1000 && m - lastPrint > 1000000){
         lastPrint = m;
         Serial.printf(" %lu ", maxTime);
         maxTime = 0;

@@ -1,9 +1,7 @@
 #include <WebSocketsServer.h>
-//#include <ArduinoJson.h>
+#include <ArduinoJsonPlus.h>
 
 WebSocketsServer webSocket = WebSocketsServer(81);
-
-typedef std::function<void(DynamicJsonDocument &doc)> WebSocketJsonHandler;
 
 class WebSocketServerJson {
     public:
@@ -61,14 +59,4 @@ class WebSocketServerJson {
     private:
           
         std::vector<WebSocketJsonHandler> handlerArray;
-
-        String createJsonTxt(std::function<void(DynamicJsonDocument& doc)> func){
-            DynamicJsonDocument doc(1024);
-            func(doc);
-            String jsonTxt;
-            serializeJson(doc, jsonTxt);
-            return jsonTxt;
-        }
-
-        
 };

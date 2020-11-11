@@ -1,9 +1,50 @@
 #include <DNSServer.h>
 #include <ESP8266WiFi.h>
 
+enum ConnectionStatus {
+    NONE = 0,
+    CONNECTING = 1,
+    CONNECTED = 2,
+    DISCONNECTED = 3,
+    GOTIP = 4,
+};
+
+typedef std::function<void(String ipAddress)> ConnectionHandler;
+
 class WifiConnection {
 public:
+    static String IpAddress2String(const IPAddress& ipAddress)
+    {
+        return String(ipAddress[0]) + String(".") +\
+        String(ipAddress[1]) + String(".") +\
+        String(ipAddress[2]) + String(".") +\
+        String(ipAddress[3])  ; 
+    }
+
     String init(const String ssid){
+        onSoftAPModeStationConnected = WiFi.onSoftAPModeStationConnected([](const WiFiEventSoftAPModeStationConnected &evt){
+            //Serial.print("onSoftAPModeStationConnected");
+        });
+
+        onSoftAPModeStationDisconnected = WiFi.onSoftAPModeStationDisconnected([](const WiFiEventSoftAPModeStationDisconnected &evt){
+            //Serial.print("onSoftAPModeStationDisconnected");
+        });
+
+        onStationModeGotIP = onStationModeGotIP = WiFi.onStationModeGotIP([&](const WiFiEventStationModeGotIP &evt){
+            connectionStatus = ConnectionStatus::GOTIP;
+            //Serial.print("onStationModeGotIP");
+        });
+
+        onStationModeConnected = WiFi.onStationModeConnected([&](const WiFiEventStationModeConnected &event){
+            connectionStatus = ConnectionStatus::CONNECTED;
+            //Serial.print("onStationModeConnected");
+        });
+
+        onStationModeDisconnected = WiFi.onStationModeDisconnected([&](const WiFiEventStationModeDisconnected &event){
+            connectionStatus = ConnectionStatus::DISCONNECTED;
+            //Serial.print("onStationModeDisconnected");
+        });
+
         WiFi.mode(WIFI_AP_STA);
         WiFi.softAP(ssid);        
 
@@ -16,59 +57,36 @@ public:
             return "";
         }
 
-        WiFi.onStationModeConnected([](const WiFiEventStationModeConnected &event){
-            Serial.print("CONNECTED");
-        });
-
-        WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected &event){
-            Serial.print("DISCONNECTED");
-        });
-
         return IpAddress2String(ip);
     };
 
-    String connect(const char* ssid, const char* pass){
-
+    void connect(const char* ssid, const char* pass, ConnectionHandler callback){
+        connectionStatus = ConnectionStatus::CONNECTING;
+        connectionHandler = callback;
         WiFi.begin(ssid, pass);
-        Serial.println();
-        Serial.print("Connecting to WiFi... ");
-        Serial.print(ssid);
-        Serial.print("@");
-        Serial.println(pass);
-
-        auto timeout = millis();
-
-        while(WiFi.status() != WL_CONNECTED){
-            delay(500);
-            Serial.print(".");
-            if(millis() - timeout  > 100000){
-                Serial.print("TIMEOUT");
-                return "";
-            }
-        }
-
-        auto ip = WiFi.localIP();
-        Serial.print("IP: ");
-        Serial.println(ip);
-        
-        WiFi.setAutoReconnect(true);
-        
-        return IpAddress2String(ip);
     }
 
     void next(){
         _dNSServer.processNextRequest();
+
+        if(connectionStatus == ConnectionStatus::GOTIP){
+            connectionStatus = ConnectionStatus::NONE;
+            auto ip = WiFi.localIP();
+            auto iStr = IpAddress2String(ip);
+            connectionHandler(iStr);
+        }
+        
     };
 
 private:
     DNSServer _dNSServer;
+    WiFiEventHandler 
+        onSoftAPModeStationConnected, 
+        onSoftAPModeStationDisconnected, 
+        onStationModeGotIP, 
+        onStationModeConnected,
+        onStationModeDisconnected;
 
-    // author apicquot from https://forum.arduino.cc/index.php?topic=228884.0
-    String IpAddress2String(const IPAddress& ipAddress)
-    {
-        return String(ipAddress[0]) + String(".") +\
-        String(ipAddress[1]) + String(".") +\
-        String(ipAddress[2]) + String(".") +\
-        String(ipAddress[3])  ; 
-    }
+    ConnectionStatus connectionStatus = ConnectionStatus::NONE;
+    ConnectionHandler connectionHandler;
 };
