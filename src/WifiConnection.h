@@ -61,6 +61,7 @@ public:
     };
 
     void connect(const char* ssid, const char* pass, ConnectionHandler callback){
+        WiFi.disconnect();
         connectionStatus = ConnectionStatus::CONNECTING;
         connectionHandler = callback;
         WiFi.begin(ssid, pass);

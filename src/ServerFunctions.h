@@ -27,6 +27,11 @@ class ServerFunctions {
                     });
                 });
             });
+
+            server.on("/disconnect", HTTP_POST, [&](){
+                Serial.println("DISCONNECTING");
+                WiFi.disconnect();
+            });
         }
 
         void getScanAsync(){
