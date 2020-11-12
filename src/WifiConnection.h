@@ -32,26 +32,20 @@ public:
 
         onStationModeGotIP = onStationModeGotIP = WiFi.onStationModeGotIP([&](const WiFiEventStationModeGotIP &evt){
             connectionStatus = ConnectionStatus::GOTIP;
-            Serial.println("onStationModeGotIP");
         });
 
         onStationModeConnected = WiFi.onStationModeConnected([&](const WiFiEventStationModeConnected &event){
             connectionStatus = ConnectionStatus::CONNECTED;
-            Serial.println("onStationModeConnected");
         });
 
         onStationModeDisconnected = WiFi.onStationModeDisconnected([&](const WiFiEventStationModeDisconnected &event){
             connectionStatus = ConnectionStatus::DISCONNECTED;
-            //Serial.print("onStationModeDisconnected");
         });
 
         WiFi.mode(WIFI_AP_STA);
         WiFi.softAP(ssid);        
 
         auto ip = WiFi.softAPIP();
-        Serial.print("IP: ");
-        Serial.println(ip);
-
         if(!_dNSServer.start(53, "*", ip)){
             Serial.println("Fallo DNS");
             return "";

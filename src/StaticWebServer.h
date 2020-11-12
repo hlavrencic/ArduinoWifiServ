@@ -18,14 +18,6 @@
 
                 server.serveStatic("/", SPIFFS, "/");
 
-                server.on("/generate_204", HTTP_GET, []() {
-                    Serial.println("Redirect /generate_204");
-                });
-
-                server.on("/", HTTP_GET, []() {
-                    Serial.println("Redirect /");
-                });
-
                 server.onNotFound([&](){
                     Serial.print("Not Found: ");
                     Serial.print(server.uri());
@@ -42,7 +34,6 @@
                     indexPath.concat("http://");
                     indexPath.concat("192.168.4.1");
                     indexPath.concat("/index.html");
-                    Serial.println(indexPath);
                     server.sendHeader("Location", indexPath);
                     server.send(303);
                 });
