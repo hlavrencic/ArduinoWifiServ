@@ -68,8 +68,6 @@ class ServerFunctions {
 
         void getScanAsync(){
             WiFi.scanNetworksAsync([&](int numSsid){
-                Serial.printf("Found %u SSID", numSsid);
-
                 webSocketServerJson->send([&](DynamicJsonDocument &doc){
                     for(auto i = 0; i < numSsid; i++){
                         String ssid;
@@ -84,15 +82,12 @@ class ServerFunctions {
                     }
                 });
 
-                Serial.println("Eliminando scan...");
                 WiFi.scanDelete();        
             });
         }  
 
         void postScanAsync(){
             WiFi.scanNetworksAsync([&](int numSsid){
-                Serial.printf("Found %u SSID", numSsid);
-
                 staticWebServer->send([&](DynamicJsonDocument &doc){
                     for(auto i = 0; i < numSsid; i++){
                         String ssid;
@@ -107,7 +102,6 @@ class ServerFunctions {
                     }
                 });
 
-                Serial.println("Eliminando scan...");
                 WiFi.scanDelete();        
             });
         }           

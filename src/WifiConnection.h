@@ -23,7 +23,7 @@ public:
 
     String init(const String ssid){
         onSoftAPModeStationConnected = WiFi.onSoftAPModeStationConnected([](const WiFiEventSoftAPModeStationConnected &evt){
-            Serial.print("onSoftAPModeStationConnected"); Serial.println(evt.aid);
+            Serial.print("onSoftAPModeStationConnected #"); Serial.println(evt.aid);
         });
 
         onSoftAPModeStationDisconnected = WiFi.onSoftAPModeStationDisconnected([](const WiFiEventSoftAPModeStationDisconnected &evt){
