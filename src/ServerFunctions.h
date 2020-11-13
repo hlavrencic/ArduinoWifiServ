@@ -17,20 +17,7 @@ class ServerFunctions {
                     auto ssid = doc["ssid"];
                     auto password = doc["password"];
 
-                    webSocketServerJson->send([&](DynamicJsonDocument &doc){
-                        doc["wifiStatus"] = "CONNECTING";
-                    });
-
-                    wifiConnection->connect(ssid, password, [&](String ip){
-                        webSocketServerJson->send([&](DynamicJsonDocument &doc){
-                            if(ip.compareTo("") != 0) {
-                                doc["ip"] = ip;
-                                doc["wifiStatus"] = "CONNECTED";
-                            } else {
-                                doc["wifiStatus"] = "ERROR";
-                            }
-                        });
-                    });                    
+                    wifiConnection->connect(ssid, password);                    
                 }
                 
             });
@@ -44,20 +31,7 @@ class ServerFunctions {
                 auto ssid = server.arg("ssid");
                 auto password = server.arg("password");
                 
-                webSocketServerJson->send([&](DynamicJsonDocument &doc){
-                    doc["wifiStatus"] = "CONNECTING";
-                });
-
-                wifiConnection->connect(ssid, password, [&](String ip){
-                    webSocketServerJson->send([&](DynamicJsonDocument &doc){
-                        if(ip.compareTo("") != 0) {
-                            doc["ip"] = ip;
-                            doc["wifiStatus"] = "CONNECTED";
-                        } else {
-                            doc["wifiStatus"] = "ERROR";
-                        }
-                    });
-                });
+                wifiConnection->connect(ssid, password);
             });
 
             server.on("/disconnect", HTTP_POST, [&](){
@@ -110,7 +84,8 @@ class ServerFunctions {
         WebSocketServerJson *webSocketServerJson;
         StaticWebServer *staticWebServer;
         WifiConnection *wifiConnection;
-        
+
+        WiFiEventHandler onStationModeGotIP, onSoftAPModeStationConnected;        
 };
 
 ServerFunctions::ServerFunctions(

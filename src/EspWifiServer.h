@@ -1,9 +1,11 @@
 #include <StaticWebServer.h>
 #include <WifiConnection.h>
 #include <ArduinoJsonPlus.h>
+#include <WebSocketServerJson.h>
 
 StaticWebServer staticWebServer;
-WifiConnection wifiConnection;
+WebSocketServerJson webSocketServerJson;
+WifiConnection wifiConnection(&webSocketServerJson);
 
 class EspWifiServer {
     public:

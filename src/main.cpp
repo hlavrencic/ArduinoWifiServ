@@ -3,7 +3,7 @@
 #include <ServerFunctions.h>
 
 EspWifiServer espWifiServer;
-WebSocketServerJson webSocketServerJson;
+
 ServerFunctions serverFunctions(&webSocketServerJson, &staticWebServer, &wifiConnection);
 
 const uint8_t LED_PIN = 2;
