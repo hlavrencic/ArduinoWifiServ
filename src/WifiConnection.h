@@ -61,7 +61,7 @@ public:
 
         webSocketServerJson->addHandler([&](DynamicJsonDocument &doc){
             if(doc.containsKey("sendStatusSwitch")){
-                sendStatusSwitch = doc["sendStatusSwitch"] == "1";
+                sendStatusSwitch = doc["sendStatusSwitch"] == 1;
                 return true;
             }    
             
@@ -88,14 +88,14 @@ public:
 
         auto m = millis();
         if(m - lastSend > 5000){
-            sendStatus();
-            lastSend = m;
+            getStatus();
+            webSocketServerJson->send(lastState);
         }
     };
 
-    void sendStatus(){
+    String getStatus(){
         if(lastStateChange >= lastSend){
-            lastState = webSocketServerJson->send([&](DynamicJsonDocument &doc){
+            lastState = createJsonTxt([&](DynamicJsonDocument &doc){
                 doc["wifiStatus"] = wifiStatus;
                 doc["reason"] = reason;
                 doc["gw"] = gw;
@@ -105,9 +105,11 @@ public:
                 doc["aid"] = aid;
                 doc["ssid"] = ssid;
             });
-        } else {
-            webSocketServerJson->send(lastState);
-        }
+        } 
+        
+        lastSend = millis();
+
+        return lastState; 
     }
 
 private:
