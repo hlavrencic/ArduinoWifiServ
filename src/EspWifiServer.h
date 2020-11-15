@@ -5,7 +5,7 @@
 
 StaticWebServer staticWebServer;
 WebSocketServerJson webSocketServerJson;
-WifiConnection wifiConnection(&webSocketServerJson);
+WifiConnection wifiConnection;
 
 class EspWifiServer {
     public:

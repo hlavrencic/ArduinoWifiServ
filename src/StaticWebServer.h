@@ -51,10 +51,15 @@
                 server.on(uri, HTTP_POST, callback);
             }
 
-            void send(std::function<void (DynamicJsonDocument &doc)> jsonFunc){
+            String send(std::function<void (DynamicJsonDocument &doc)> jsonFunc){
                 DynamicJsonDocument doc(1024);
                 auto jsonTxt = createJsonTxt(jsonFunc);
-                server.send(200, "application/json", jsonTxt);
+                send(jsonTxt);
+                return jsonTxt;
+            }   
+
+            void send(String json){
+                server.send(200, "application/json", json);
             }   
     };
 

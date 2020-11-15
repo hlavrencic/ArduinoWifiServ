@@ -1,6 +1,5 @@
 #include <DNSServer.h>
 #include <ESP8266WiFi.h>
-#include <WebSocketServerJson.h>
 
 class WifiConnection {
 public:
@@ -11,8 +10,6 @@ public:
         String(ipAddress[2]) + String(".") +\
         String(ipAddress[3])  ; 
     }
-
-    WifiConnection(WebSocketServerJson *webSocketServerJson);
 
     String init(const String ssidAP){
         onSoftAPModeStationConnected = WiFi.onSoftAPModeStationConnected([&](const WiFiEventSoftAPModeStationConnected &evt){
@@ -59,19 +56,12 @@ public:
             return "";
         }
 
-        webSocketServerJson->addHandler([&](DynamicJsonDocument &doc){
-            if(doc.containsKey("sendStatusSwitch")){
-                sendStatusSwitch = doc["sendStatusSwitch"] == 1;
-                return true;
-            }    
-            
-            return false;
-        });
-
-        sendStatusSwitch = true;
-
         return IpAddress2String(ip);
     };
+
+    String getScan(){
+        return lastScanJson;
+    }
 
     void connect(String ssid, String pass){   
         wifiStatus = "CONNECTING";
@@ -79,18 +69,33 @@ public:
         lastStateChange = millis();
     };
 
+    void scan(){
+        lastScanJson = "{}";
+        WiFi.scanNetworksAsync([&](int numSsid){
+            lastScanJson = createJsonTxt([&](DynamicJsonDocument &doc){
+                for(auto i = 0; i < numSsid; i++){
+                    String ssid;
+                    byte enc;
+                    int rss;
+                    byte* bssid;
+                    int channel;
+                    bool hidden;
+                    WiFi.getNetworkInfo(i, ssid, enc, rss, bssid, channel, hidden);
+
+                    doc["scan"][i]["ssid"] = ssid;
+                    doc["scan"][i]["enc"] = enc;
+                    doc["scan"][i]["rss"] = rss;
+                    doc["scan"][i]["channel"] = channel;
+                    doc["scan"][i]["hidden"] = hidden;
+                }
+
+                WiFi.scanDelete();   
+            });
+        });
+    }
+
     void next(){
         _dNSServer.processNextRequest();
-
-        if(!sendStatusSwitch){
-            return;
-        }
-
-        auto m = millis();
-        if(m - lastSend > 5000){
-            getStatus();
-            webSocketServerJson->send(lastState);
-        }
     };
 
     String getStatus(){
@@ -121,16 +126,12 @@ private:
         onStationModeConnected,
         onStationModeDisconnected;
 
-    WebSocketServerJson* webSocketServerJson;
     String lastState;
     unsigned long lastSend = 0;
     unsigned long lastStateChange = 0;
     bool sendStatusSwitch;
+    String lastScanJson = "{}";;
 
     String ip, gw, mask, channel, wifiStatus, reason, ssid;
     uint8_t aid;
 };
-
-WifiConnection::WifiConnection(WebSocketServerJson *_webSocketServerJson){
-    webSocketServerJson = _webSocketServerJson;
-}

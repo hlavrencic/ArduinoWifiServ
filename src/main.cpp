@@ -4,11 +4,9 @@
 
 EspWifiServer espWifiServer;
 
-ServerFunctions serverFunctions(&webSocketServerJson, &staticWebServer, &wifiConnection);
+ServerFunctions serverFunctions(&staticWebServer, &wifiConnection);
 
 const uint8_t LED_PIN = 2;
-
-
 
 void setup(){
     Serial.begin(230400);
