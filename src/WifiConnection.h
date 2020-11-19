@@ -90,8 +90,6 @@ public:
     void connect(String ssidNew, String pass){   
         wifiStatus = "CONNECTING";
         ssid = ssidNew;
-        Serial.println(ssidNew);
-        Serial.println(ssid);
         channel = "";
         mask = "";
         gw = "";
