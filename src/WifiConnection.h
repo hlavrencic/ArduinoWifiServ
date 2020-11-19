@@ -14,71 +14,24 @@ public:
     String init(const String ssidAP){
         onSoftAPModeStationConnected = WiFi.onSoftAPModeStationConnected([&](const WiFiEventSoftAPModeStationConnected &evt){
             aid = evt.aid;
-            lastStateChange = millis();
         });
 
         onSoftAPModeStationDisconnected = WiFi.onSoftAPModeStationDisconnected([&](const WiFiEventSoftAPModeStationDisconnected &evt){
             aid -= 1;
-            lastStateChange = millis();
-        });
-
-        onStationModeGotIP = WiFi.onStationModeGotIP([&](const WiFiEventStationModeGotIP &evt){
-            ip = WifiConnection::IpAddress2String(evt.ip);
-            gw = WifiConnection::IpAddress2String(evt.gw);
-            mask = WifiConnection::IpAddress2String(evt.mask);
-            wifiStatus = "CONNECTED";
-
-            lastStateChange = millis();
-        });
-
-        onStationModeConnected = WiFi.onStationModeConnected([&](const WiFiEventStationModeConnected &evt){
-            channel = evt.channel;
-            ssid = evt.ssid;
-            wifiStatus = "CONNECTED";
-
-            lastStateChange = millis();
         });
 
         onStationModeDisconnected = WiFi.onStationModeDisconnected([&](const WiFiEventStationModeDisconnected &evt){
             reason = evt.reason;
-            ssid = evt.ssid;
-            wifiStatus = "DISCONNECTED";
-
-            lastStateChange = millis();
         });
 
         WiFi.mode(WIFI_AP_STA);
         WiFi.softAP(ssidAP);        
-
+    
         auto ipAP = WiFi.softAPIP();
         if(!_dNSServer.start(53, "*", ipAP)){
             Serial.println("Fallo DNS");
             return "";
         }
-
-        ssid = WiFi.SSID();
-        
-        auto status = WiFi.status();
-        Serial.println(status);
-        switch(status){
-            case WL_CONNECTED:
-                ip = IpAddress2String(WiFi.localIP());
-                gw = IpAddress2String(WiFi.gatewayIP());
-                mask = IpAddress2String(WiFi.subnetMask());
-                channel = WiFi.channel();
-                ssid = WiFi.SSID();
-                wifiStatus = "CONNECTED";
-            break;
-            case WL_DISCONNECTED:
-                ssid = WiFi.SSID();
-                wifiStatus = "DISCONNECTED";
-            break;
-            default:
-                wifiStatus = status;
-            break;
-        }
-
-        getStatus();
 
         return IpAddress2String(ipAP);
     };
@@ -88,15 +41,8 @@ public:
     }
 
     void connect(String ssidNew, String pass){   
-        wifiStatus = "CONNECTING";
-        ssid = ssidNew;
-        channel = "";
-        mask = "";
-        gw = "";
-        ip = "";
         reason = "";
         WiFi.begin(ssidNew, pass);
-        lastStateChange = millis();
     };
 
     void scan(){
@@ -129,20 +75,17 @@ public:
     };
 
     String getStatus(){
-        if(lastStateChange >= lastSend){
-            lastState = createJsonTxt([&](DynamicJsonDocument &doc){
-                doc["wifiStatus"] = wifiStatus;
-                doc["reason"] = reason;
-                doc["gw"] = gw;
-                doc["mask"] = mask;
-                doc["channel"] = channel;
-                doc["ip"] = ip;
-                doc["aid"] = aid;
-                doc["ssid"] = ssid;
-            });
-        } 
-        
-        lastSend = millis();
+        auto lastState = createJsonTxt([&](DynamicJsonDocument &doc){
+            doc["wifiStatus"] = WiFi.status();
+            doc["reason"] = reason;
+            doc["gw"] = IpAddress2String(WiFi.gatewayIP());
+            doc["mask"] = IpAddress2String(WiFi.subnetMask());
+            doc["channel"] = WiFi.channel();
+            doc["ip"] = IpAddress2String(WiFi.localIP());
+            doc["aid"] = aid;
+            doc["ssid"] = WiFi.SSID();
+            doc["psk"] = WiFi.psk();
+        });
 
         return lastState; 
     }
@@ -152,16 +95,10 @@ private:
     WiFiEventHandler 
         onSoftAPModeStationConnected, 
         onSoftAPModeStationDisconnected, 
-        onStationModeGotIP, 
-        onStationModeConnected,
         onStationModeDisconnected;
 
-    String lastState;
-    unsigned long lastSend = 0;
-    unsigned long lastStateChange = 0;
-    bool sendStatusSwitch;
     String lastScanJson = "{}";;
 
-    String ip, gw, mask, channel, wifiStatus, reason, ssid;
+    String reason;
     uint8_t aid;
 };
