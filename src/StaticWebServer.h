@@ -19,16 +19,16 @@
                 server.serveStatic("/", SPIFFS, "/");
 
                 server.onNotFound([&](){
-                    Serial.print("Not Found: ");
-                    Serial.print(server.uri());
-                    Serial.print(" - ");
-                    Serial.print(server.method());
-                    Serial.print(" - ");
-                    Serial.print(server.args());
-                    Serial.print(" - ");
-                    Serial.print(server.client());
-                    Serial.print(" - ");
-                    Serial.println(server.hostHeader());
+                    //Serial.print("Not Found: ");
+                    //Serial.print(server.uri());
+                    //Serial.print(" - ");
+                    //Serial.print(server.method());
+                    //Serial.print(" - ");
+                    //Serial.print(server.args());
+                    //Serial.print(" - ");
+                    //Serial.print(server.client());
+                    //Serial.print(" - ");
+                    //Serial.println(server.hostHeader());
 
                     String indexPath;
                     indexPath.concat("http://");

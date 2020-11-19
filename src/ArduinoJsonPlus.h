@@ -10,7 +10,16 @@
         func(doc);
         String jsonTxt;
         serializeJson(doc, jsonTxt);
+        doc.clear();
+        doc.garbageCollect();
         return jsonTxt;
     }
 
+    void parseJsonTxt(String jsonTxt, WebSocketJsonHandler func){
+        DynamicJsonDocument doc(1024);
+        deserializeJson(doc, jsonTxt);
+        func(doc);
+        doc.clear();
+        doc.garbageCollect();
+    }
 #endif

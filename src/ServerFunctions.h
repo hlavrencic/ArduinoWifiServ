@@ -5,7 +5,7 @@ class ServerFunctions {
             WifiConnection *wifiConnection);
 
         void load(){           
-            staticWebServer->handlePostRequest("/startScan", [&](){     
+            staticWebServer->handlePostRequest("/startScan", [&](){
                 staticWebServer->send("{}");
                 wifiConnection->scan();
             });
@@ -15,9 +15,21 @@ class ServerFunctions {
                 staticWebServer->send(jsonTxt);
             });
 
-            staticWebServer->handlePostRequest("/connect", [&](){                
-                auto ssid = server.arg("ssid");
-                auto password = server.arg("password");
+            staticWebServer->handlePostRequest("/connect", [&](){    
+                String ssid;
+                String password;
+                
+                if(server.hasArg("ssid")) {
+                    ssid = server.arg("ssid");
+                    password = server.arg("password");
+                } else {
+                    auto arg0 =server.arg(0);
+                    parseJsonTxt(arg0, [&](DynamicJsonDocument &doc){
+                        ssid = doc["ssid"].as<String>();
+                        password = doc["password"].as<String>();
+                    });
+                }
+
                 wifiConnection->connect(ssid, password);
                 staticWebServer->send("{}");
             });

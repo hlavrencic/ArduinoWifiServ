@@ -50,22 +50,54 @@ public:
         WiFi.mode(WIFI_AP_STA);
         WiFi.softAP(ssidAP);        
 
-        auto ip = WiFi.softAPIP();
-        if(!_dNSServer.start(53, "*", ip)){
+        auto ipAP = WiFi.softAPIP();
+        if(!_dNSServer.start(53, "*", ipAP)){
             Serial.println("Fallo DNS");
             return "";
         }
 
-        return IpAddress2String(ip);
+        ssid = WiFi.SSID();
+        
+        auto status = WiFi.status();
+        Serial.println(status);
+        switch(status){
+            case WL_CONNECTED:
+                ip = IpAddress2String(WiFi.localIP());
+                gw = IpAddress2String(WiFi.gatewayIP());
+                mask = IpAddress2String(WiFi.subnetMask());
+                channel = WiFi.channel();
+                ssid = WiFi.SSID();
+                wifiStatus = "CONNECTED";
+            break;
+            case WL_DISCONNECTED:
+                ssid = WiFi.SSID();
+                wifiStatus = "DISCONNECTED";
+            break;
+            default:
+                wifiStatus = status;
+            break;
+        }
+
+        getStatus();
+
+        return IpAddress2String(ipAP);
     };
 
     String getScan(){
         return lastScanJson;
     }
 
-    void connect(String ssid, String pass){   
+    void connect(String ssidNew, String pass){   
         wifiStatus = "CONNECTING";
-        WiFi.begin(ssid, pass);
+        ssid = ssidNew;
+        Serial.println(ssidNew);
+        Serial.println(ssid);
+        channel = "";
+        mask = "";
+        gw = "";
+        ip = "";
+        reason = "";
+        WiFi.begin(ssidNew, pass);
         lastStateChange = millis();
     };
 
