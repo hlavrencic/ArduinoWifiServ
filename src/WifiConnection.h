@@ -1,6 +1,13 @@
 #include <DNSServer.h>
 #include <ESP8266WiFi.h>
 
+enum WifiConnectionStatus {
+    NONE = 0,
+    DISCONNECTED = 1,
+    CONNECTING = 1,
+    CONNECTED = 2
+};
+
 class WifiConnection {
 public:
     static String IpAddress2String(const IPAddress& ipAddress)
@@ -18,6 +25,10 @@ public:
 
         onSoftAPModeStationDisconnected = WiFi.onSoftAPModeStationDisconnected([&](const WiFiEventSoftAPModeStationDisconnected &evt){
             aid -= 1;
+        });
+
+        onStationModeConnected = WiFi.onStationModeConnected([&](const WiFiEventStationModeConnected &evt){
+            status = WifiConnectionStatus::CONNECTED;
         });
 
         onStationModeDisconnected = WiFi.onStationModeDisconnected([&](const WiFiEventStationModeDisconnected &evt){
@@ -41,7 +52,8 @@ public:
     }
 
     void connect(String ssidNew, String pass){   
-        reason = "";
+        reason = WIFI_DISCONNECT_REASON_UNSPECIFIED;
+        status = WifiConnectionStatus::CONNECTING;
         WiFi.begin(ssidNew, pass);
     };
 
@@ -72,11 +84,34 @@ public:
 
     void next(){
         _dNSServer.processNextRequest();
+
+        switch(reason){
+            case WIFI_DISCONNECT_REASON_AUTH_EXPIRE:
+            case WIFI_DISCONNECT_REASON_ASSOC_EXPIRE:
+            case WIFI_DISCONNECT_REASON_NOT_AUTHED:
+            case WIFI_DISCONNECT_REASON_ASSOC_NOT_AUTHED:
+            case WIFI_DISCONNECT_REASON_MIC_FAILURE:
+            case WIFI_DISCONNECT_REASON_BEACON_TIMEOUT:
+            case WIFI_DISCONNECT_REASON_NO_AP_FOUND:
+            case WIFI_DISCONNECT_REASON_AUTH_FAIL:
+            case WIFI_DISCONNECT_REASON_ASSOC_FAIL:
+            case WIFI_DISCONNECT_REASON_HANDSHAKE_TIMEOUT:
+                status = WifiConnectionStatus::DISCONNECTED;
+                WiFi.disconnect();
+                break;
+            default:
+                break;
+        };        
     };
 
     String getStatus(){
         auto lastState = createJsonTxt([&](DynamicJsonDocument &doc){
-            doc["wifiStatus"] = WiFi.status();
+            auto wifiStatus = WiFi.status();
+            if(wifiStatus == wl_status_t::WL_CONNECTED){
+                status = WifiConnectionStatus::CONNECTED;
+            }
+
+            doc["wifiStatus"] = wifiStatus;
             doc["reason"] = reason;
             doc["gw"] = IpAddress2String(WiFi.gatewayIP());
             doc["mask"] = IpAddress2String(WiFi.subnetMask());
@@ -84,7 +119,7 @@ public:
             doc["ip"] = IpAddress2String(WiFi.localIP());
             doc["aid"] = aid;
             doc["ssid"] = WiFi.SSID();
-            doc["psk"] = WiFi.psk();
+            doc["status"] = status;
         });
 
         return lastState; 
@@ -94,11 +129,13 @@ private:
     DNSServer _dNSServer;
     WiFiEventHandler 
         onSoftAPModeStationConnected, 
-        onSoftAPModeStationDisconnected, 
+        onSoftAPModeStationDisconnected,
+        onStationModeConnected, 
         onStationModeDisconnected;
 
     String lastScanJson = "{}";;
+    WifiConnectionStatus status = WifiConnectionStatus::NONE;
 
-    String reason;
+    WiFiDisconnectReason reason = WiFiDisconnectReason::WIFI_DISCONNECT_REASON_UNSPECIFIED;
     uint8_t aid;
 };
