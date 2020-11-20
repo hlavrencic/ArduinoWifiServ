@@ -8,15 +8,9 @@
     ESP8266WebServer server(80);
 
     class StaticWebServer{
-        
         public:
-            bool begin(String ip){
-                if(!SPIFFS.begin()){
-                    Serial.println("SPIFFS Mount Failed");
-                    return false;    
-                }
-
-                server.serveStatic("/", SPIFFS, "/");
+            bool begin(String ip, FS fs){
+                server.serveStatic("/", fs, "/");
 
                 server.onNotFound([&](){
                     //Serial.print("Not Found: ");
@@ -62,6 +56,5 @@
                 server.send(200, "application/json", json);
             }   
     };
-
 #endif
 
