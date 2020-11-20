@@ -4,8 +4,8 @@
 enum WifiConnectionStatus {
     NONE = 0,
     DISCONNECTED = 1,
-    CONNECTING = 1,
-    CONNECTED = 2
+    CONNECTING = 2,
+    CONNECTED = 3
 };
 
 class WifiConnection {
@@ -32,6 +32,7 @@ public:
         });
 
         onStationModeDisconnected = WiFi.onStationModeDisconnected([&](const WiFiEventStationModeDisconnected &evt){
+            if(evt.reason == 1) return; // Evito actualizar la razon, luego de una desconexion manual.
             reason = evt.reason;
         });
 
@@ -56,6 +57,11 @@ public:
         status = WifiConnectionStatus::CONNECTING;
         WiFi.begin(ssidNew, pass);
     };
+
+    void disconnect(){
+        status = WifiConnectionStatus::DISCONNECTED;
+        WiFi.disconnect();
+    }
 
     void scan(){
         lastScanJson = "{}";
@@ -85,23 +91,24 @@ public:
     void next(){
         _dNSServer.processNextRequest();
 
-        switch(reason){
-            case WIFI_DISCONNECT_REASON_AUTH_EXPIRE:
-            case WIFI_DISCONNECT_REASON_ASSOC_EXPIRE:
-            case WIFI_DISCONNECT_REASON_NOT_AUTHED:
-            case WIFI_DISCONNECT_REASON_ASSOC_NOT_AUTHED:
-            case WIFI_DISCONNECT_REASON_MIC_FAILURE:
-            case WIFI_DISCONNECT_REASON_BEACON_TIMEOUT:
-            case WIFI_DISCONNECT_REASON_NO_AP_FOUND:
-            case WIFI_DISCONNECT_REASON_AUTH_FAIL:
-            case WIFI_DISCONNECT_REASON_ASSOC_FAIL:
-            case WIFI_DISCONNECT_REASON_HANDSHAKE_TIMEOUT:
-                status = WifiConnectionStatus::DISCONNECTED;
-                WiFi.disconnect();
-                break;
-            default:
-                break;
-        };        
+        if(status == CONNECTING){
+            switch(reason){
+                case WIFI_DISCONNECT_REASON_AUTH_EXPIRE:
+                case WIFI_DISCONNECT_REASON_ASSOC_EXPIRE:
+                case WIFI_DISCONNECT_REASON_NOT_AUTHED:
+                case WIFI_DISCONNECT_REASON_ASSOC_NOT_AUTHED:
+                case WIFI_DISCONNECT_REASON_MIC_FAILURE:
+                case WIFI_DISCONNECT_REASON_BEACON_TIMEOUT:
+                case WIFI_DISCONNECT_REASON_NO_AP_FOUND:
+                case WIFI_DISCONNECT_REASON_AUTH_FAIL:
+                case WIFI_DISCONNECT_REASON_ASSOC_FAIL:
+                case WIFI_DISCONNECT_REASON_HANDSHAKE_TIMEOUT:
+                    disconnect();                    
+                    break;
+                default:
+                    break;
+            };  
+        }
     };
 
     String getStatus(){
