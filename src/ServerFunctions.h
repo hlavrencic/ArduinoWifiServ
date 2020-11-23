@@ -49,8 +49,6 @@ class ServerFunctions {
     private:
         StaticWebServer *staticWebServer;
         WifiConnection *wifiConnection;
-
-        WiFiEventHandler onStationModeGotIP, onSoftAPModeStationConnected;        
 };
 
 ServerFunctions::ServerFunctions(
