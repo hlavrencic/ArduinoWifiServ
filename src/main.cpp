@@ -12,10 +12,6 @@ void setup(){
     pinMode(LED_BUILTIN, OUTPUT);
     
     Serial.begin(230400);
-    while (!Serial)
-    {
-        delay(100);
-    }
 
     if(!SPIFFS.begin()){
         Serial.println("SPIFFS Mount Failed");
