@@ -10,7 +10,7 @@ WifiConnection wifiConnection;
 
 ServerFunctions serverFunctions(&staticWebServer, &wifiConnection);
 
-class EspWifiServer {
+class ArduinoWifiServ {
     public:
         bool init(const String ssid, FS fs){
             auto ip = wifiConnection.init(ssid);

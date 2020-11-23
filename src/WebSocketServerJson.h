@@ -1,7 +1,12 @@
 #ifndef H_WebSocketServerJson
     #define H_WebSocketServerJson
 
-    #include <WebSocketsServer.h>
+    #ifdef ARDUINO_ARCH_ESP32
+        #include <WebSocketsServer.h> // https://github.com/Links2004/arduinoWebSockets
+    #else
+        #include <WebSocketsServer.h>
+    #endif
+    
     #include <ArduinoJsonPlus.h>
 
     WebSocketsServer webSocket = WebSocketsServer(81);

@@ -1,9 +1,9 @@
 #include <Arduino.h>
 #include <FS.h>
-#include <EspWifiServer.h>
+#include <ArduinoWifiServ.h>
 
 
-EspWifiServer espWifiServer;
+ArduinoWifiServ ArduinoWifiServ;
 
 const uint8_t LED_PIN = 5;
 
@@ -19,12 +19,12 @@ void setup(){
     }
     
     
-    espWifiServer.init("My Access Point", SPIFFS);
+    ArduinoWifiServ.init("My Access Point", SPIFFS);
 
     Serial.println("FIN SETUP");
 }
 
 void loop(){
-    auto isDelayed = espWifiServer.next();
+    auto isDelayed = ArduinoWifiServ.next();
     digitalWrite(LED_BUILTIN, isDelayed);
 }

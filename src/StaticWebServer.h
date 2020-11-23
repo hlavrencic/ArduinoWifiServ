@@ -1,11 +1,18 @@
 #ifndef H_StaticWebServer
     #define H_StaticWebServer
 
-    #include <ESP8266WebServer.h>
+    
+    
     #include <FS.h>
     #include <ArduinoJsonPlus.h>
 
-    ESP8266WebServer server(80);
+    #ifdef ARDUINO_ARCH_ESP32
+        #include <WebServer.h>
+        WebServer server(80);
+    #else
+        #include <ESP8266WebServer.h>
+        ESP8266WebServer server(80);
+    #endif
 
     class StaticWebServer{
         public:
@@ -41,7 +48,7 @@
                 server.handleClient();
             };
 
-            void handlePostRequest(const Uri &uri, std::function<void ()> callback){
+            void handlePostRequest(String uri, WebServer::THandlerFunction callback){
                 server.on(uri, HTTP_POST, callback);
             }
 
