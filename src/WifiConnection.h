@@ -5,9 +5,9 @@
     #include <DNSServer.h>
 
     #ifdef ARDUINO_ARCH_ESP32
-        #include <WebServer.h>
+        #include <WiFi.h>
     #else
-        #include <ESP8266WebServer.h>
+        #include <ESP8266WiFi.h>
     #endif
 
     enum WifiConnectionStatus {
@@ -28,25 +28,27 @@
         }
 
         String init(const String ssidAP){
-            onSoftAPModeStationConnected = WiFi.onSoftAPModeStationConnected([&](const WiFiEventSoftAPModeStationConnected &evt){
-                aid = evt.aid;
-            });
+            #ifdef ARDUINO_ARCH_ESP8266
+                onSoftAPModeStationConnected = WiFi.onSoftAPModeStationConnected([&](const WiFiEventSoftAPModeStationConnected &evt){
+                    aid = evt.aid;
+                });
 
-            onSoftAPModeStationDisconnected = WiFi.onSoftAPModeStationDisconnected([&](const WiFiEventSoftAPModeStationDisconnected &evt){
-                aid -= 1;
-            });
+                onSoftAPModeStationDisconnected = WiFi.onSoftAPModeStationDisconnected([&](const WiFiEventSoftAPModeStationDisconnected &evt){
+                    aid -= 1;
+                });
 
-            onStationModeConnected = WiFi.onStationModeConnected([&](const WiFiEventStationModeConnected &evt){
-                status = WifiConnectionStatus::CONNECTED;
-            });
+                onStationModeConnected = WiFi.onStationModeConnected([&](const WiFiEventStationModeConnected &evt){
+                    status = WifiConnectionStatus::CONNECTED;
+                });
 
-            onStationModeDisconnected = WiFi.onStationModeDisconnected([&](const WiFiEventStationModeDisconnected &evt){
-                if(evt.reason == 1) return; // Evito actualizar la razon, luego de una desconexion manual.
-                reason = evt.reason;
-            });
+                onStationModeDisconnected = WiFi.onStationModeDisconnected([&](const WiFiEventStationModeDisconnected &evt){
+                    if(evt.reason == 1) return; // Evito actualizar la razon, luego de una desconexion manual.
+                    reason = evt.reason;
+                });
+            #endif
 
             WiFi.mode(WIFI_AP_STA);
-            WiFi.softAP(ssidAP);        
+            WiFi.softAP(ssidAP.c_str());        
         
             auto ipAP = WiFi.softAPIP();
             if(!_dNSServer.start(53, "*", ipAP)){
@@ -61,10 +63,15 @@
             return lastScanJson;
         }
 
-        void connect(String ssidNew, String pass){   
-            reason = WIFI_DISCONNECT_REASON_UNSPECIFIED;
+        void connect(String ssidNew, String pass){ 
             status = WifiConnectionStatus::CONNECTING;
-            WiFi.begin(ssidNew, pass);
+            reason = 1;
+            #ifdef ARDUINO_ARCH_ESP8266
+                WiFi.begin(ssidNew, pass);
+            #else
+                WiFi.begin(ssidNew.c_str(), pass.c_str());
+            #endif
+            
         };
 
         void disconnect(){
@@ -74,50 +81,58 @@
 
         void scan(){
             lastScanJson = "{}";
-            WiFi.scanNetworksAsync([&](int numSsid){
-                lastScanJson = createJsonTxt([&](DynamicJsonDocument &doc){
-                    for(auto i = 0; i < numSsid; i++){
-                        String ssid;
-                        byte enc;
-                        int rss;
-                        byte* bssid;
-                        int channel;
-                        bool hidden;
-                        WiFi.getNetworkInfo(i, ssid, enc, rss, bssid, channel, hidden);
+            
+            #ifdef ARDUINO_ARCH_ESP8266
+                WiFi.scanNetworksAsync([&](int numSsid){
+                    lastScanJson = createJsonTxt([&](DynamicJsonDocument &doc){
+                        for(auto i = 0; i < numSsid; i++){
+                            String ssid;
+                            byte enc;
+                            int rss;
+                            byte* bssid;
+                            int channel;
+                            bool hidden;
+                            WiFi.getNetworkInfo(i, ssid, enc, rss, bssid, channel, hidden);
 
-                        doc["scan"][i]["ssid"] = ssid;
-                        doc["scan"][i]["enc"] = enc;
-                        doc["scan"][i]["rss"] = rss;
-                        doc["scan"][i]["channel"] = channel;
-                        doc["scan"][i]["hidden"] = hidden;
-                    }
+                            doc["scan"][i]["ssid"] = ssid;
+                            doc["scan"][i]["enc"] = enc;
+                            doc["scan"][i]["rss"] = rss;
+                            doc["scan"][i]["channel"] = channel;
+                            doc["scan"][i]["hidden"] = hidden;
+                        }
 
-                    WiFi.scanDelete();   
+                        WiFi.scanDelete();   
+                    });
                 });
-            });
+            #else
+                // TODO Scan
+            #endif
+            
         }
 
         void next(){
             _dNSServer.processNextRequest();
 
-            if(status == CONNECTING){
-                switch(reason){
-                    case WIFI_DISCONNECT_REASON_AUTH_EXPIRE:
-                    case WIFI_DISCONNECT_REASON_ASSOC_EXPIRE:
-                    case WIFI_DISCONNECT_REASON_NOT_AUTHED:
-                    case WIFI_DISCONNECT_REASON_ASSOC_NOT_AUTHED:
-                    case WIFI_DISCONNECT_REASON_MIC_FAILURE:
-                    case WIFI_DISCONNECT_REASON_BEACON_TIMEOUT:
-                    case WIFI_DISCONNECT_REASON_NO_AP_FOUND:
-                    case WIFI_DISCONNECT_REASON_AUTH_FAIL:
-                    case WIFI_DISCONNECT_REASON_ASSOC_FAIL:
-                    case WIFI_DISCONNECT_REASON_HANDSHAKE_TIMEOUT:
-                        disconnect();                    
-                        break;
-                    default:
-                        break;
-                };  
-            }
+            #ifdef ARDUINO_ARCH_ESP8266
+                if(status == CONNECTING){
+                    switch(reason){
+                        case WIFI_DISCONNECT_REASON_AUTH_EXPIRE:
+                        case WIFI_DISCONNECT_REASON_ASSOC_EXPIRE:
+                        case WIFI_DISCONNECT_REASON_NOT_AUTHED:
+                        case WIFI_DISCONNECT_REASON_ASSOC_NOT_AUTHED:
+                        case WIFI_DISCONNECT_REASON_MIC_FAILURE:
+                        case WIFI_DISCONNECT_REASON_BEACON_TIMEOUT:
+                        case WIFI_DISCONNECT_REASON_NO_AP_FOUND:
+                        case WIFI_DISCONNECT_REASON_AUTH_FAIL:
+                        case WIFI_DISCONNECT_REASON_ASSOC_FAIL:
+                        case WIFI_DISCONNECT_REASON_HANDSHAKE_TIMEOUT:
+                            disconnect();                    
+                            break;
+                        default:
+                            break;
+                    };  
+                }
+            #endif
         };
 
         String getStatus(){
@@ -128,7 +143,6 @@
                 }
 
                 doc["wifiStatus"] = wifiStatus;
-                doc["reason"] = reason;
                 doc["gw"] = IpAddress2String(WiFi.gatewayIP());
                 doc["mask"] = IpAddress2String(WiFi.subnetMask());
                 doc["channel"] = WiFi.channel();
@@ -136,6 +150,7 @@
                 doc["aid"] = aid;
                 doc["ssid"] = WiFi.SSID();
                 doc["status"] = status;
+                doc["reason"] = reason;
             });
 
             return lastState; 
@@ -143,16 +158,21 @@
 
     private:
         DNSServer _dNSServer;
-        WiFiEventHandler 
-            onSoftAPModeStationConnected, 
-            onSoftAPModeStationDisconnected,
-            onStationModeConnected, 
-            onStationModeDisconnected;
 
+        #ifdef ARDUINO_ARCH_ESP8266
+            WiFiEventHandler 
+                onSoftAPModeStationConnected, 
+                onSoftAPModeStationDisconnected,
+                onStationModeConnected, 
+                onStationModeDisconnected;
+
+            
+        #endif
+
+        uint8_t reason = 1;
         String lastScanJson = "{}";;
         WifiConnectionStatus status = WifiConnectionStatus::NONE;
 
-        WiFiDisconnectReason reason = WiFiDisconnectReason::WIFI_DISCONNECT_REASON_UNSPECIFIED;
         uint8_t aid;
     };
 
