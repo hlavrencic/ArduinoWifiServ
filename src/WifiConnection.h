@@ -74,6 +74,12 @@
             
         };
 
+        void connect(const char* ssidNew, const char* pass){ 
+            status = WifiConnectionStatus::CONNECTING;
+            reason = 1;
+            WiFi.begin(ssidNew, pass);
+        };
+
         void disconnect(){
             status = WifiConnectionStatus::DISCONNECTED;
             WiFi.disconnect();
