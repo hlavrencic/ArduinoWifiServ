@@ -1,11 +1,5 @@
 #include <Arduino.h>
-
-#ifdef ARDUINO_ARCH_ESP8266
-    #include <LittleFS.h>
-#else
-    #include <FS.h>
-#endif
-
+#include <SPIFFS.h>
 #include <ArduinoWifiServ.h>
 
 

@@ -45,3 +45,8 @@ class ArduinoWifiServ {
         unsigned long lastPrint = 0;
         unsigned long maxTime = 0;    
 };
+
+extern StaticWebServer staticWebServer;
+extern WebSocketServerJson webSocketServerJson;
+extern WifiConnection wifiConnection;
+extern ServerFunctions serverFunctions;
