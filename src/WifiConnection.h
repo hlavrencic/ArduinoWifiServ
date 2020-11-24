@@ -45,6 +45,10 @@
                     if(evt.reason == 1) return; // Evito actualizar la razon, luego de una desconexion manual.
                     reason = evt.reason;
                 });
+            #elif ARDUINO_ARCH_ESP32
+                WiFi.onEvent([&](system_event_id_t event, system_event_info_t info){
+                    reason = info.disconnected.reason;
+                }, SYSTEM_EVENT_STA_DISCONNECTED);
             #endif
 
             WiFi.mode(WIFI_AP_STA);
@@ -85,6 +89,26 @@
             WiFi.disconnect();
         }
 
+        void scanCompleted(int numSsid){
+            lastScanJson = createJsonTxt([&](DynamicJsonDocument &doc){
+                for(auto i = 0; i < numSsid; i++){
+                    String ssid;
+                    byte enc;
+                    int rss;
+                    byte* bssid;
+                    int channel;
+                    WiFi.getNetworkInfo(i, ssid, enc, rss, bssid, channel);
+
+                    doc["scan"][i]["ssid"] = ssid;
+                    doc["scan"][i]["enc"] = enc;
+                    doc["scan"][i]["rss"] = rss;
+                    doc["scan"][i]["channel"] = channel;
+                }
+
+                WiFi.scanDelete();   
+            });            
+        }
+
         void scan(){
             lastScanJson = "{}";
             
@@ -111,32 +135,31 @@
                     });
                 });
             #else
-                // TODO Scan
+                WiFi.scanNetworks(true);
             #endif
-            
         }
 
         void next(){
             _dNSServer.processNextRequest();
 
+            if(status == CONNECTING){
+                switch(reason){
+                    case 0:
+                    case 1:
+                    case 8:
+                        break;
+                    default:
+                        disconnect();                    
+                        break;
+                };  
+            }
+
             #ifdef ARDUINO_ARCH_ESP8266
-                if(status == CONNECTING){
-                    switch(reason){
-                        case WIFI_DISCONNECT_REASON_AUTH_EXPIRE:
-                        case WIFI_DISCONNECT_REASON_ASSOC_EXPIRE:
-                        case WIFI_DISCONNECT_REASON_NOT_AUTHED:
-                        case WIFI_DISCONNECT_REASON_ASSOC_NOT_AUTHED:
-                        case WIFI_DISCONNECT_REASON_MIC_FAILURE:
-                        case WIFI_DISCONNECT_REASON_BEACON_TIMEOUT:
-                        case WIFI_DISCONNECT_REASON_NO_AP_FOUND:
-                        case WIFI_DISCONNECT_REASON_AUTH_FAIL:
-                        case WIFI_DISCONNECT_REASON_ASSOC_FAIL:
-                        case WIFI_DISCONNECT_REASON_HANDSHAKE_TIMEOUT:
-                            disconnect();                    
-                            break;
-                        default:
-                            break;
-                    };  
+                
+            #else
+                auto numSsids = WiFi.scanComplete();
+                if(numSsids >= 0){
+                    scanCompleted(numSsids);
                 }
             #endif
         };
@@ -171,8 +194,6 @@
                 onSoftAPModeStationDisconnected,
                 onStationModeConnected, 
                 onStationModeDisconnected;
-
-            
         #endif
 
         uint8_t reason = 1;
