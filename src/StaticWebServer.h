@@ -1,9 +1,6 @@
 #ifndef H_StaticWebServer
     #define H_StaticWebServer
 
-    
-    
-    #include <FS.h>
     #include <ArduinoJsonPlus.h>
 
     #ifdef ARDUINO_ARCH_ESP32
@@ -17,19 +14,19 @@
     class StaticWebServer{
         public:
             bool begin(String ip, FS fs){
-                server.serveStatic("/", fs, "/");
+                
 
                 server.onNotFound([&](){
-                    //Serial.print("Not Found: ");
-                    //Serial.print(server.uri());
-                    //Serial.print(" - ");
-                    //Serial.print(server.method());
-                    //Serial.print(" - ");
-                    //Serial.print(server.args());
-                    //Serial.print(" - ");
-                    //Serial.print(server.client());
-                    //Serial.print(" - ");
-                    //Serial.println(server.hostHeader());
+                    Serial.print("Not Found: ");
+                    Serial.print(server.uri());
+                    Serial.print(" - ");
+                    Serial.print(server.method());
+                    Serial.print(" - ");
+                    Serial.print(server.args());
+                    Serial.print(" - ");
+                    Serial.print(server.client());
+                    Serial.print(" - ");
+                    Serial.println(server.hostHeader());
 
                     String indexPath;
                     indexPath.concat("http://");
@@ -38,6 +35,8 @@
                     server.sendHeader("Location", indexPath);
                     server.send(303);
                 });
+
+                server.serveStatic("/", fs, "/");
 
                 server.begin();
 
